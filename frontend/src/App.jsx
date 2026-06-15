@@ -33,6 +33,7 @@ import DoctorAppointments from './pages/doctor/Appointments';
 import DoctorSchedule from './pages/doctor/Schedule';
 import LabResults from './pages/doctor/LabResults';
 import DoctorPrescriptions from './pages/doctor/Prescriptions';
+import DoctorPrescriptionOrders from './pages/doctor/PrescriptionOrders';
 import DoctorAlerts from './pages/doctor/Alerts';
 import DoctorMessages from './pages/doctor/Messages';
 import DoctorProfile from './pages/doctor/Profile';
@@ -113,6 +114,7 @@ function AppRoutes() {
       <Route path="/doctor/schedule" element={<ProtectedRoute roles={['doctor']}><DoctorSchedule /></ProtectedRoute>} />
       <Route path="/doctor/lab-results" element={<ProtectedRoute roles={['doctor']}><LabResults /></ProtectedRoute>} />
       <Route path="/doctor/prescriptions" element={<ProtectedRoute roles={['doctor']}><DoctorPrescriptions /></ProtectedRoute>} />
+      <Route path="/doctor/prescription-orders" element={<ProtectedRoute roles={['doctor']}><DoctorPrescriptionOrders /></ProtectedRoute>} />
       <Route path="/doctor/alerts" element={<ProtectedRoute roles={['doctor']}><DoctorAlerts /></ProtectedRoute>} />
       <Route path="/doctor/messages" element={<ProtectedRoute roles={['doctor']}><DoctorMessages /></ProtectedRoute>} />
       <Route path="/doctor/profile" element={<ProtectedRoute roles={['doctor']}><DoctorProfile /></ProtectedRoute>} />

@@ -28,6 +28,7 @@ const doctorNav = [
   { to: '/doctor/schedule', icon: '🗓️', label: 'Schedule' },
   { to: '/doctor/lab-results', icon: '🧪', label: 'Lab Results' },
   { to: '/doctor/prescriptions', icon: '💊', label: 'Prescriptions' },
+  { to: '/doctor/prescription-orders', icon: '📋', label: 'Prescription Orders' },
   { to: '/doctor/alerts', icon: '⚠️', label: 'Alerts' },
   { to: '/doctor/messages', icon: '💬', label: 'Messages' },
   { to: '/doctor/profile', icon: '👤', label: 'Profile' },

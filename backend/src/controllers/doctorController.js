@@ -239,6 +239,84 @@ exports.addLabResult = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
+const ACTIVE_ORDER_STATUSES = ['pending', 'approved', 'preparing', 'dispatched'];
+const COMPLETED_ORDER_STATUSES = ['delivered', 'rejected', 'cancelled'];
+const ORDER_ACTION_MAP = {
+  approve: 'approved',
+  preparing: 'preparing',
+  dispatch: 'dispatched',
+  deliver: 'delivered',
+  reject: 'rejected',
+};
+
+exports.getPrescriptionOrders = async (req, res) => {
+  try {
+    const tab = req.query.tab === 'history' ? 'history' : 'pending';
+    const statuses = tab === 'pending' ? ACTIVE_ORDER_STATUSES : COMPLETED_ORDER_STATUSES;
+
+    const [orders, pendingCount] = await Promise.all([
+      prisma.prescriptionOrder.findMany({
+        where: { doctorId: req.user.id, status: { in: statuses } },
+        include: {
+          prescription: { select: { medicationName: true, dosage: true, frequency: true, instructions: true } },
+          patient: { select: { name: true, nhsId: true, dateOfBirth: true } },
+        },
+        orderBy: { orderedAt: 'desc' },
+      }),
+      prisma.prescriptionOrder.count({ where: { doctorId: req.user.id, status: { in: ACTIVE_ORDER_STATUSES } } }),
+    ]);
+
+    res.json({
+      pendingCount,
+      orders: orders.map(o => ({
+        ...o,
+        medication_name: o.prescription.medicationName,
+        dosage: o.prescription.dosage,
+        frequency: o.prescription.frequency,
+        instructions: o.prescription.instructions,
+        patient_name: o.patient.name,
+        nhs_id: o.patient.nhsId,
+        date_of_birth: o.patient.dateOfBirth,
+        delivery_method: o.deliveryMethod,
+        delivery_address: o.deliveryAddress,
+        pharmacy_name: o.pharmacyName,
+        patient_notes: o.patientNotes,
+        doctor_notes: o.doctorNotes,
+        ordered_at: o.orderedAt,
+      })),
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.updatePrescriptionOrderStatus = async (req, res) => {
+  try {
+    const { action, order_id, doctor_notes, pharmacy_name } = req.body;
+    const nextStatus = ORDER_ACTION_MAP[action];
+    if (!nextStatus) return res.status(400).json({ error: 'Invalid action' });
+
+    const order = await prisma.prescriptionOrder.findFirst({ where: { id: +order_id, doctorId: req.user.id } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    await prisma.prescriptionOrder.update({
+      where: { id: order.id },
+      data: {
+        status: nextStatus,
+        ...(doctor_notes ? { doctorNotes: doctor_notes } : {}),
+        ...(pharmacy_name ? { pharmacyName: pharmacy_name } : {}),
+      },
+    });
+
+    const messages = {
+      approved: 'Order approved.',
+      preparing: 'Order marked as being prepared.',
+      dispatched: 'Order marked as dispatched.',
+      delivered: 'Order marked as delivered.',
+      rejected: 'Order rejected.',
+    };
+    res.json({ success: true, message: messages[nextStatus] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
 exports.getPrescriptions = async (req, res) => {
   try {
     const rows = await prisma.prescription.findMany({

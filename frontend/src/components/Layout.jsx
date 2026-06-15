@@ -26,6 +26,7 @@ const pageTitles = {
   '/doctor/schedule': ['Schedule', 'Your availability'],
   '/doctor/lab-results': ['Lab Results', 'Patient test results'],
   '/doctor/prescriptions': ['Prescriptions', 'Issue prescriptions'],
+  '/doctor/prescription-orders': ['Prescription Orders', 'Review and process patient prescription requests'],
   '/doctor/alerts': ['Alerts & Tasks', 'Health alerts'],
   '/doctor/messages': ['Messages', 'Patient communications'],
   '/doctor/profile': ['Profile', 'Doctor information'],
