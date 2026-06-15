@@ -36,9 +36,12 @@ export default function DoctorPrescriptions() {
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Issue Prescription</button>
       </div>
       <div className="card">
+        <div className="card-header">
+          <h3><i className="fas fa-pills" /> All Prescriptions ({prescriptions.length})</h3>
+        </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Status</th></tr></thead>
+            <thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
             <tbody>
               {prescriptions.length ? prescriptions.map(p => (
                 <tr key={p.id}>
@@ -46,10 +49,11 @@ export default function DoctorPrescriptions() {
                   <td>💊 {p.medication_name}</td>
                   <td>{p.dosage}</td>
                   <td>{p.frequency}</td>
-                  <td>{p.duration}</td>
-                  <td><span className={`badge badge-${p.status === 'active' ? 'success' : 'gray'}`}>{p.status}</span></td>
+                  <td>{p.startDate ? new Date(p.startDate).toLocaleDateString('en-GB') : '—'}</td>
+                  <td>{p.endDate ? new Date(p.endDate).toLocaleDateString('en-GB') : '—'}</td>
+                  <td><span className={`badge badge-${p.status === 'active' ? 'success' : 'gray'}`}>{p.status === 'active' ? 'Active' : 'Ended'}</span></td>
                 </tr>
-              )) : <tr><td colSpan={6}><div className="empty-state">No prescriptions</div></td></tr>}
+              )) : <tr><td colSpan={7}><div className="empty-state">No prescriptions</div></td></tr>}
             </tbody>
           </table>
         </div>
