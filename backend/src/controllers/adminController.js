@@ -65,14 +65,81 @@ exports.verifyDoctor = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-exports.getPendingApprovals = async (req, res) => {
+exports.getApprovals = async (req, res) => {
   try {
-    const rows = await prisma.user.findMany({
-      where: { status: 'pending' },
-      select: { id: true, name: true, email: true, role: true, createdAt: true, phone: true },
-      orderBy: { createdAt: 'desc' },
+    const approvalRoles = ['doctor', 'government', 'pharmacy'];
+
+    const [pendingRaw, approved, rejected] = await Promise.all([
+      prisma.user.findMany({
+        where: { status: 'pending', role: { in: approvalRoles } },
+        include: { doctor: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.user.findMany({
+        where: { status: 'active', role: { in: ['doctor', 'government'] } },
+        include: { doctor: { select: { specialization: true, hospital: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      prisma.user.findMany({
+        where: { status: 'suspended', role: { in: approvalRoles } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    const pending = pendingRaw.map(u => ({
+      id: u.id, name: u.name, email: u.email, role: u.role,
+      phone: u.phone, nhsId: u.nhsId, createdAt: u.createdAt,
+      hcpcNumber: u.doctor?.hcpcNumber,
+      specialization: u.doctor?.specialization,
+      hospital: u.doctor?.hospital,
+      experienceYears: u.doctor?.experienceYears,
+      bio: u.doctor?.bio,
+    }));
+
+    const approvedMapped = approved.map(u => ({
+      id: u.id, name: u.name, email: u.email, role: u.role,
+      nhsId: u.nhsId, createdAt: u.createdAt,
+      specialization: u.doctor?.specialization,
+      hospital: u.doctor?.hospital,
+    }));
+
+    res.json({ pending, approved: approvedMapped, rejected });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.approveUser = async (req, res) => {
+  try {
+    const id = +req.params.id;
+    const user = await prisma.user.update({ where: { id }, data: { status: 'active' } });
+    await prisma.doctor.updateMany({ where: { userId: id }, data: { hcpcVerified: true } });
+    await prisma.notification.create({
+      data: {
+        userId: id, type: 'system',
+        title: 'Account Approved — Welcome to HealthSphere',
+        message: `Your ${user.role} account has been approved by the administration team. You can now sign in.`,
+      },
     });
-    res.json(rows);
+    try { await mailer.mailAccountApproved(user.email, user.name, user.role); } catch (_) {}
+    res.json({ message: 'Approved' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.rejectUser = async (req, res) => {
+  try {
+    const id = +req.params.id;
+    const { reason = 'Application did not meet requirements.' } = req.body;
+    const user = await prisma.user.update({ where: { id }, data: { status: 'suspended' } });
+    await prisma.notification.create({
+      data: {
+        userId: id, type: 'system',
+        title: 'Account Application — Decision',
+        message: `Your application has not been approved. Reason: ${reason}. Please contact admin@healthsphere.nhs.uk for further information.`,
+      },
+    });
+    try { await mailer.mailAccountRejected(user.email, user.name, user.role, reason); } catch (_) {}
+    res.json({ message: 'Rejected' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
