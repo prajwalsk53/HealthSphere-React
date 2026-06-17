@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Component } from 'react';
 import api from '../../api/axios';
 
 const CARE_PLAN_BADGE = {
@@ -23,6 +23,26 @@ const EMPTY_FORM = { name: '', inheritance_type: 'complex', symptoms: '', food_t
 function trunc(str, n) {
   if (!str) return '—';
   return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+/* ── Error Boundary (prevents modal crashes from blanking the page) ── */
+class ErrorBoundary extends Component {
+  state = { crashed: false, msg: '' };
+  static getDerivedStateFromError(err) { return { crashed: true, msg: err.message }; }
+  render() {
+    if (this.state.crashed)
+      return (
+        <div className="alert alert-danger" style={{ margin: 20 }}>
+          <i className="fas fa-exclamation-circle" style={{ marginRight: 6 }}></i>
+          Something went wrong: {this.state.msg}
+          <button type="button" className="btn btn-sm btn-outline" style={{ marginLeft: 12 }}
+            onClick={() => this.setState({ crashed: false, msg: '' })}>
+            Dismiss
+          </button>
+        </div>
+      );
+    return this.props.children;
+  }
 }
 
 /* ── Disease Form Modal ────────────────────────────────────────────── */
@@ -486,13 +506,15 @@ export default function Diseases() {
 
       {/* NLM Full Detail Modal */}
       {nlmModal && (
-        <NLMDetailModal
-          detail={nlmDetail}
-          loading={nlmDetailLoading}
-          error={nlmDetailError}
-          onImport={openImport}
-          onClose={closeNlmModal}
-        />
+        <ErrorBoundary key={String(nlmModal)}>
+          <NLMDetailModal
+            detail={nlmDetail}
+            loading={nlmDetailLoading}
+            error={nlmDetailError}
+            onImport={openImport}
+            onClose={closeNlmModal}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Add / Edit Disease Modal */}
