@@ -6,13 +6,15 @@ router.use(authenticate, requireRole('government'));
 
 router.get('/dashboard', async (req, res) => {
   try {
-    const [totalPatients, criticalAlerts, appointments, activePrescriptions] = await Promise.all([
+    const [totalPatients, criticalAlerts, appointments, activePrescriptions, totalFoods, totalDiseases] = await Promise.all([
       prisma.user.count({ where: { role: 'patient' } }),
       prisma.medicalRecord.count({ where: { status: 'critical' } }),
       prisma.appointment.count({ where: { appointmentDate: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } } }),
       prisma.prescription.count({ where: { status: 'active' } }),
+      prisma.foodDatabase.count(),
+      prisma.geneticDisease.count(),
     ]);
-    res.json({ totalPatients, criticalAlerts, appointments, activePrescriptions });
+    res.json({ totalPatients, criticalAlerts, appointments, activePrescriptions, totalFoods, totalDiseases });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

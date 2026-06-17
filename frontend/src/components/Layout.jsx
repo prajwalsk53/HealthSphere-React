@@ -45,6 +45,7 @@ const pageTitles = {
   '/government/alerts': ['Health Alerts', 'National alerts'],
   '/government/map': ['Regional Map', 'Health by region'],
   '/government/regional': ['Regional Analysis', 'UK regional health breakdown'],
+  '/government/reports':  ['Policy Reports', 'DHSC publications & policy briefs'],
   '/medical-team/dashboard': ['Medical Team Dashboard', 'Medicine dispensing & order management'],
   '/medical-team/medicine-queue': ['Medicine Queue', 'Process and dispatch approved prescription orders'],
   '/medical-team/profile': ['My Profile', 'Medical Team — Pharmacy Staff'],
