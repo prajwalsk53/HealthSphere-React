@@ -42,14 +42,41 @@ exports.getUsers = async (req, res) => {
     const { role, status, search } = req.query;
     const users = await prisma.user.findMany({
       where: {
-        ...(role ? { role } : {}),
+        ...(role   ? { role }   : {}),
         ...(status ? { status } : {}),
-        ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
+        ...(search ? {
+          OR: [
+            { name:  { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { nhsId: { contains: search, mode: 'insensitive' } },
+          ],
+        } : {}),
       },
-      select: { id: true, name: true, email: true, role: true, status: true, nhsId: true, createdAt: true, phone: true },
+      select: {
+        id: true, name: true, email: true, role: true, status: true,
+        nhsId: true, createdAt: true, phone: true, dateOfBirth: true,
+      },
       orderBy: { createdAt: 'desc' },
+      take: 100,
     });
-    res.json(users);
+
+    // Most-recent access log per user → last login time + IP
+    const userIds = users.map(u => u.id);
+    const lastLogs = userIds.length
+      ? await prisma.accessLog.findMany({
+          where:    { userId: { in: userIds } },
+          select:   { userId: true, ipAddress: true, createdAt: true },
+          orderBy:  { createdAt: 'desc' },
+          distinct: ['userId'],
+        })
+      : [];
+    const logMap = Object.fromEntries(lastLogs.map(l => [l.userId, l]));
+
+    res.json(users.map(u => ({
+      ...u,
+      lastLogin: logMap[u.id]?.createdAt || null,
+      lastIp:    logMap[u.id]?.ipAddress  || null,
+    })));
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
